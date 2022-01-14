@@ -1,6 +1,6 @@
 from scapy.all import *
 import re
-import datetime
+from datetime import datetime
 import os
 import argparse
 import socket
@@ -17,11 +17,11 @@ class Analyzer():
             if pkt.haslayer(IP):
                 if pkt[IP].src == IP_addr:
                     seg = pkt[IP].payload.name
-                    time = str(datetime.datetime.fromtimestamp(float(pkt.time)))
+                    time = str(datetime.fromtimestamp(float(pkt.time)))
                     session[f"{seg}: {pkt[IP].src} --> {pkt[IP].dst}"] = time
                 elif pkt[IP].dst == IP_addr:
                     seg = pkt[IP].payload.name
-                    time = str(datetime.datetime.fromtimestamp(float(pkt.time)))
+                    time = str(datetime.fromtimestamp(float(pkt.time)))
                     session[f"{seg}: {pkt[IP].dst} <-- {pkt[IP].src}"] = time
                 else:
                     continue
@@ -44,7 +44,7 @@ class Analyzer():
         for pkt in pkts:
             if pkt.haslayer(IP) and not pkt.haslayer(ICMP):
                 if pkt[IP].src == IP_addr_1 and pkt[IP].dst == IP_addr_2:
-                    time = datetime.datetime.fromtimestamp(float(pkt.time))
+                    time = datetime.fromtimestamp(float(pkt.time))
                     seg = pkt[IP].payload.name
                     sport = pkt[seg].sport
                     dport = pkt[seg].dport
@@ -52,7 +52,7 @@ class Analyzer():
                     session.append(f"#{p_number} {time}  {seg}:  {pkt[IP].src}:{sport} --> {pkt[IP].dst}:{dport}")
                     packets.append(pkt)
                 elif pkt[IP].src == IP_addr_2 and pkt[IP].dst == IP_addr_1:
-                    time = datetime.datetime.fromtimestamp(float(pkt.time))
+                    time = datetime.fromtimestamp(float(pkt.time))
                     seg = pkt[IP].payload.name
                     sport = pkt[seg].sport
                     dport = pkt[seg].dport
@@ -63,13 +63,13 @@ class Analyzer():
                     continue
             elif pkt.haslayer(IP) and pkt.haslayer(ICMP):
                 if pkt[IP].src == IP_addr_1 and pkt[IP].dst == IP_addr_2:
-                    time = datetime.datetime.fromtimestamp(float(pkt.time))
+                    time = datetime.fromtimestamp(float(pkt.time))
                     seg = pkt[IP].payload.name
                     p_number = pkts.index(pkt)+1
                     session.append(f"#{p_number} {time}  {seg}:  {pkt[IP].src} --> {pkt[IP].dst}")
                     packets.append(pkt)
                 elif pkt[IP].src == IP_addr_2 and pkt[IP].dst == IP_addr_1:
-                    time = datetime.datetime.fromtimestamp(float(pkt.time))
+                    time = datetime.fromtimestamp(float(pkt.time))
                     seg = pkt[IP].payload.name
                     p_number = pkts.index(pkt)+1
                     session.append(f"#{p_number} {time}  {seg}:  {pkt[IP].dst} <-- {pkt[IP].src}")
@@ -78,10 +78,10 @@ class Analyzer():
                     continue
             else:
                 continue
-            session = "\n".join(session)
-            result = "\n\n".join((f"Packets exchange between {IP_addr_1} and {IP_addr_2}", session))
-            return result, packets
-
+        session = "\n".join(session)
+        result = "\n\n".join((f"Packets exchange between {IP_addr_1} and {IP_addr_2}", session))
+        return result, packets
+    
     @staticmethod
     def list_of_IP(pkts):
         """private and public IP"""
@@ -193,7 +193,19 @@ class Analyzer():
         else:
             result = "\n".join(result)
             result = "\n\n".join(("Malicious IP", result))
-            return result 
+            return result
+
+    @staticmethod
+    def time_filter(pkts, date1, date2=''):
+        """to get pkts filter by date"""
+        filtered_pkts = []
+        filtered_pcap = PacketList()
+        for p in pkts:
+            p_time = str(datetime.fromtimestamp(float(p.time))).split('.')[0]
+            if p_time == date1:
+                filtered_pcap.append(p)
+        return filtered_pcap
+        
 
 
 	
@@ -224,8 +236,8 @@ print("Reading pcap-file...")
 pkts = rdpcap(args.file)
 pkt_sum = re.compile(r"TCP:.* UDP:.* ICMP:.* Other:\d*")
 mo = pkt_sum.search(str(pkts))
-time1 = datetime.datetime.fromtimestamp(float(pkts[0].time))
-time2 = datetime.datetime.fromtimestamp(float(pkts[-1].time))
+time1 = datetime.fromtimestamp(float(pkts[0].time))
+time2 = datetime.fromtimestamp(float(pkts[-1].time))
 print("Short summary:")
 print(f"File name: {pkts.listname}\nPackets included: {mo.group()}")
 other = []
