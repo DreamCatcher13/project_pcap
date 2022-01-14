@@ -4,6 +4,7 @@ import datetime
 import os
 import argparse
 import socket
+import ip_mal
 
 class Analyzer():
     """packet analyzer itself"""	
@@ -141,9 +142,8 @@ class Analyzer():
         """save txt result"""
         filename = filename + '.txt'
         path = os.path.join(os.getcwd(), filename)
-        file = open(path, 'w')
-        file.write(result)
-        file.close()
+        with open(path, 'w') as file_obj:
+            file_obj.write(result)
 	
     @staticmethod
     def save_pcap(pkts, filename):
@@ -151,32 +151,6 @@ class Analyzer():
         filename = filename + '.pcap'
         path = os.path.join(os.getcwd(), filename)
         wrpcap(path, pkts)
-	
-    @staticmethod
-    def malicious_ip(pkts):
-        """check for malicious IP"""
-        ip_add = []
-        mal_ip = []
-        for i in pkts:
-            if i.haslayer(IP):
-                ip_add.append(i[IP].src)
-                ip_add.append(i[IP].dst)
-            else:
-                continue
-        ip_add = list(set(ip_add))
-        file = open(os.path.join(os.getcwd(), 'ip_mal.txt'), 'r')
-        mal_ip = file.readlines()
-        file.close()
-        result = []
-        for i in ip_add:
-            if i+'\n' in mal_ip:
-                result.append(i)
-        if len(result) == 0:
-            return "No malicious IP addresses found"
-        else:
-            result = "\n".join(result)
-            result = "\n\n".join(("Malicious IP", result))
-            return result
 		
     @staticmethod
     def get_service(pkts):
@@ -198,6 +172,30 @@ class Analyzer():
         result = "\n".join(port_to_serv)
         result = "\n\n".join(("Port numbers to service names:", result))
         return result
+
+    @staticmethod
+    def malicious_ip(pkts):
+        """check for malicious ip addresses"""
+        ip_add = []
+        result = []
+        for i in pkts:
+            if i.haslayer(IP):
+                ip_add.append(i[IP].src)
+                ip_add.append(i[IP].dst)
+            else:
+                continue
+        ip_add = list(set(ip_add))
+        for i in ip_add:
+            if i in ip_mal.ip_list:
+                result.append(i)
+        if len(result) == 0:
+            return "No malicious IP addresses found"
+        else:
+            result = "\n".join(result)
+            result = "\n\n".join(("Malicious IP", result))
+            return result 
+
+
 	
 ## actual program ##
 
@@ -226,6 +224,8 @@ print("Reading pcap-file...")
 pkts = rdpcap(args.file)
 pkt_sum = re.compile(r"TCP:.* UDP:.* ICMP:.* Other:\d*")
 mo = pkt_sum.search(str(pkts))
+time1 = datetime.datetime.fromtimestamp(float(pkts[0].time))
+time2 = datetime.datetime.fromtimestamp(float(pkts[-1].time))
 print("Short summary:")
 print(f"File name: {pkts.listname}\nPackets included: {mo.group()}")
 other = []
@@ -238,7 +238,8 @@ for i in pkts:
 		ip_list.append(i[IP].dst)
 	else:
 		continue
-print("Other packets: " + ' '.join(set(other)) + "\n")
+print("Other packets: " + ' '.join(set(other)))
+print(f"Capture begins: {time1}\nCapture ends: {time2}")
 ip_list = list(set(ip_list))
 
 what_to_do = '''
