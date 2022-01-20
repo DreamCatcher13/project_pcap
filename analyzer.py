@@ -1,6 +1,6 @@
 from scapy.all import *
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 import socket
 import ip_mal
 
@@ -194,13 +194,20 @@ class Analyzer():
             return result
 
     @staticmethod
-    def time_filter(pkts, date1, date2=''):
+    def time_filter(pkts, date1, date2):
         """to get pkts filter by date"""
         filtered_pkts = []
         filtered_pcap = PacketList()
         for p in pkts:
-            p_time = str(datetime.fromtimestamp(float(p.time))).split('.')[0]
-            if p_time == date1:
-                filtered_pcap.append(p)
-        return filtered_pcap
-        
+            p_time = datetime.fromtimestamp(float(p.time))
+            time = str(p_time)
+            if date1 <= p_time <= (date2 + timedelta(seconds=1)):
+                if p.haslayer(IP):
+                    filtered_pkts.append(f"{time} {p[IP].payload.name}:  {p[IP].src} -> {p[IP].dst}")
+                    filtered_pcap.append(p)
+                elif p.haslayer(ARP)and not p.haslayer(IP):
+                    filtered_pkts.append(f"{time} {p.payload.name}: {p.src} -> {p.dst}")
+                    filtered_pcap.append(p)
+        result = "\n".join(filtered_pkts)
+        result = "\n\n".join((f"from {date1}", result))
+        return result, filtered_pcap
