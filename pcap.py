@@ -168,7 +168,7 @@ while (user_choice != '8'):
         end_date = input("Enter end date/time: ")
         begin_date = datetime.strptime(begin_date, "%Y-%m-%d %H:%M:%S")
         end_date = datetime.strptime(end_date, "%Y-%m-%d %H:%M:%S")
-        if not time_in_range(time1, time2, begin_date) or not time_in_range(time1, time2, end_date):
+        if not time_in_range(time1, time2, end_date):
             print("Date/time not in packet file")
             user_choice = get_user_choice()
         else:

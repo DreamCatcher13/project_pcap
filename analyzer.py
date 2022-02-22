@@ -130,7 +130,7 @@ class Analyzer():
                 mac[p.psrc] = p.hwsrc
         result = []
         for i in mac:
-            result.append(f"{i}: {mac[i]}")
+            result.append(f"{i} -- {mac[i]}")
         result = "\n".join(result)
         result = "\n\n".join(("MAC addresses table:\n\nIP address      MAC address", result))
         return result
