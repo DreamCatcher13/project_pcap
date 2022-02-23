@@ -201,7 +201,7 @@ class Analyzer():
         for p in pkts:
             p_time = datetime.fromtimestamp(float(p.time))
             time = str(p_time)
-            if date1 <= p_time <= (date2 + timedelta(seconds=1)):
+            if date1 <= p_time <= date2:
                 if p.haslayer(IP):
                     filtered_pkts.append(f"{time} {p[IP].payload.name}:  {p[IP].src} -> {p[IP].dst}")
                     filtered_pcap.append(p)
